@@ -1,0 +1,77 @@
+From 52d6ec22f7b6678a0d7e7ec18e9c72892cd21681 Mon Sep 17 00:00:00 2001
+From: sbwml <admin@cooluc.com>
+Date: Sat, 5 Oct 2024 20:26:55 +0800
+Subject: [PATCH 4/4] fstools: use ntfs3 instead of ntfs
+
+Signed-off-by: sbwml <admin@cooluc.com>
+---
+ block.c              | 16 ++++++++++------
+ libblkid-tiny/ntfs.c |  2 +-
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+--- a/block.c
++++ b/block.c
+@@ -786,7 +786,7 @@ static void check_filesystem(struct prob
+ 		ckfs = e2fsck;
+ 	} else if (!strncmp(pr->type, "btrfs", 5)) {
+ 		ckfs = btrfsck;
+-	} else if (!strncmp(pr->type, "ntfs", 4)) {
++	} else if (!strncmp(pr->type, "ntfs3", 4)) {
+ 		ckfs = ntfsck;
+ 	} else {
+ 		ULOG_ERR("check_filesystem: %s is not supported\n", pr->type);
+@@ -806,7 +806,7 @@ static void check_filesystem(struct prob
+ 		} else if(!strncmp(pr->type, "btrfs", 5)) {
+ 			execl(ckfs, ckfs, "--repair", pr->dev, NULL);
+ 			exit(EXIT_FAILURE);
+-		} else if(!strncmp(pr->type, "ntfs", 4)) {
++		} else if(!strncmp(pr->type, "ntfs3", 4)) {
+ 			execl(ckfs, ckfs, "-b", pr->dev, NULL);
+ 			exit(EXIT_FAILURE);
+ 		} else {
+@@ -951,8 +951,12 @@ static int handle_mount(const char *sour
+ 	int err = -EINVAL;
+ 	size_t count;
+ 	int i;
++	char _data[128] = {0};
++	if (strstr(fstype, "fat") || strstr(fstype, "ntfs3")) {
++		snprintf(_data, sizeof(_data), "%s", "iocharset=utf8,uid=65534,gid=65534");
++	}
+ 
+-	if (!strcmp(fstype, "ntfs")) {
++	if (!strcmp(fstype, "ntfs3")) {
+ 		filesystems = ntfs_fs;
+ 		count = ARRAY_SIZE(ntfs_fs);
+ 	} else {
+@@ -964,7 +968,7 @@ static int handle_mount(const char *sour
+ 		const char *fs = filesystems[i];
+ 
+ 		err = mount(source, target, fs, m ? m->flags : 0,
+-			    (m && m->options) ? m->options : "");
++			    (m && m->options) ? m->options : _data);
+ 		if (!err || errno != ENODEV)
+ 			break;
+ 	}
+@@ -1597,9 +1601,9 @@ static int mount_extroot(char *cfg)
+ 		if (strncmp(pr->type, "ext", 3) &&
+ 		    strncmp(pr->type, "f2fs", 4) &&
+ 		    strncmp(pr->type, "btrfs", 5) &&
+-		    strncmp(pr->type, "ntfs", 4) &&
++		    strncmp(pr->type, "ntfs3", 4) &&
+ 		    strncmp(pr->type, "ubifs", 5)) {
+-			ULOG_ERR("extroot: unsupported filesystem %s, try ext4, f2fs, btrfs, ntfs or ubifs\n", pr->type);
++			ULOG_ERR("extroot: unsupported filesystem %s, try ext4, f2fs, btrfs, ntfs3 or ubifs\n", pr->type);
+ 			return -1;
+ 		}
+ 
+--- a/libblkid-tiny/ntfs.c
++++ b/libblkid-tiny/ntfs.c
+@@ -214,7 +214,7 @@ static int probe_ntfs(blkid_probe pr, co
+ 
+ const struct blkid_idinfo ntfs_idinfo =
+ {
+-	.name		= "ntfs",
++	.name		= "ntfs3",
+ 	.usage		= BLKID_USAGE_FILESYSTEM,
+ 	.probefunc	= probe_ntfs,
+ 	.magics		=
