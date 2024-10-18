@@ -1,0 +1,30 @@
+From c47d588d7fdbeaf1d035b797703991c9f7026c7a Mon Sep 17 00:00:00 2001
+From: sbwml <admin@cooluc.com>
+Date: Fri, 18 Oct 2024 21:33:47 +0800
+Subject: [PATCH] block: remove invalid logs
+
+Signed-off-by: sbwml <admin@cooluc.com>
+---
+ block.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/block.c
++++ b/block.c
+@@ -427,7 +427,7 @@ static struct uci_package * config_try_l
+ 
+ 	if (uci_load(ctx, file, &pkg)) {
+ 		uci_get_errorstr(ctx, &err, file);
+-		ULOG_ERR("unable to load configuration (%s)\n", err);
++		//ULOG_ERR("unable to load configuration (%s)\n", err);
+ 
+ 		free(err);
+ 		return NULL;
+@@ -461,7 +461,7 @@ static int config_load(char *cfg)
+ 	}
+ 
+ 	if (!pkg) {
+-		ULOG_ERR("no usable configuration\n");
++		//ULOG_ERR("no usable configuration\n");
+ 		return -1;
+ 	}
+ 
